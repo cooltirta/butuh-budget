@@ -1,0 +1,122 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  CREDIT_CARD
+  CASH
+}
+
+enum MemberRole {
+  OWNER
+  MEMBER
+}
+
+model User {
+  id        String         @id @default(uuid())
+  name      String         // e.g. "Ayah" or "Bunda"
+  members   BudgetMember[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model Budget {
+  id             String           @id @default(uuid())
+  name           String
+  members        BudgetMember[]
+  accounts       Account[]
+  categoryGroups CategoryGroup[]
+  monthlyBudgets MonthlyBudget[]
+  transactions   Transaction[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model BudgetMember {
+  id        String     @id @default(uuid())
+  budgetId  String
+  userId    String
+  role      MemberRole @default(MEMBER)
+  budget    Budget     @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([budgetId, userId])
+}
+
+model Account {
+  id             String        @id @default(uuid())
+  budgetId       String
+  name           String
+  type           AccountType
+  isActive       Boolean       @default(true)
+  budget         Budget        @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  transactions   Transaction[] @relation("AccountTransactions")
+  transfersIn    Transaction[] @relation("TransferTransactions")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model CategoryGroup {
+  id         String     @id @default(uuid())
+  budgetId   String
+  name       String
+  sortOrder  Int        @default(0)
+  budget     Budget     @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  categories Category[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Category {
+  id              String          @id @default(uuid())
+  categoryGroupId String
+  name            String
+  sortOrder       Int             @default(0)
+  categoryGroup   CategoryGroup   @relation(fields: [categoryGroupId], references: [id], onDelete: Cascade)
+  monthlyBudgets  MonthlyBudget[]
+  transactions    Transaction[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model MonthlyBudget {
+  id         String   @id @default(uuid())
+  budgetId   String
+  categoryId String
+  month      String   // formatted as YYYY-MM-01
+  assigned   Int      // in cents (can be positive or negative)
+  budget     Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([budgetId, categoryId, month])
+}
+
+model Transaction {
+  id            String    @id @default(uuid())
+  budgetId      String
+  accountId     String
+  toAccountId   String?   // For transfer transactions
+  date          DateTime
+  payee         String    // e.g. "Groceries", "Salary", "Transfer to Savings"
+  categoryId    String?   // null for RTA income or transfers between accounts
+  memo          String?
+  amount        Int       // in cents. Negative for outflow (spending), Positive for inflow (income)
+  cleared       Boolean   @default(false)
+  budget        Budget    @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  account       Account   @relation("AccountTransactions", fields: [accountId], references: [id], onDelete: Cascade)
+  toAccount     Account?  @relation("TransferTransactions", fields: [toAccountId], references: [id], onDelete: SetNull)
+  category      Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
