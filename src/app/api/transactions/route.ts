@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 export async function GET(req: NextRequest) {
   try {
@@ -95,6 +96,29 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Create notification
+    const formatRupiah = (c: number) => "Rp " + Math.abs(c / 100).toLocaleString('id-ID');
+    const amountInt = parseInt(amount, 10);
+    
+    if (toAccountId) {
+      const srcAcc = await prisma.account.findUnique({ where: { id: accountId } });
+      const destAcc = await prisma.account.findUnique({ where: { id: toAccountId } });
+      await createNotification(
+        budgetId,
+        `${session.name} mentransfer ${formatRupiah(amountInt)} dari ${srcAcc?.name || 'Rekening'} ke ${destAcc?.name || 'Rekening'}`
+      );
+    } else {
+      let catName = 'Siap Dialokasikan';
+      if (categoryId) {
+        const cat = await prisma.category.findUnique({ where: { id: categoryId } });
+        if (cat) catName = cat.name;
+      }
+      await createNotification(
+        budgetId,
+        `${session.name} mencatat ${amountInt < 0 ? 'pengeluaran' : 'pemasukan'} ${formatRupiah(amountInt)} untuk "${payee}" (${catName})`
+      );
+    }
+
     return NextResponse.json({ success: true, transaction: newTx });
   } catch (error: any) {
     console.error('Error creating transaction:', error);
@@ -136,6 +160,13 @@ export async function DELETE(req: NextRequest) {
     await prisma.transaction.delete({
       where: { id },
     });
+
+    // Create notification
+    const formatRupiah = (c: number) => "Rp " + Math.abs(c / 100).toLocaleString('id-ID');
+    await createNotification(
+      member.budgetId,
+      `${session.name} menghapus transaksi ${formatRupiah(tx.amount)} untuk "${tx.payee}"`
+    );
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

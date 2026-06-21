@@ -25,7 +25,7 @@ export default function SettingsPage() {
   const [accountForm, setAccountForm] = useState({
     name: "",
     type: "CHECKING",
-    startingBalanceStr: "0.00",
+    startingBalanceStr: "0",
   });
   const [groupForm, setGroupForm] = useState({
     name: "",
@@ -86,13 +86,13 @@ export default function SettingsPage() {
         }),
       });
 
-      if (!accRes.ok) throw new Error("Failed to create account");
+      if (!accRes.ok) throw new Error("Gagal membuat rekening");
 
       const accJson = await accRes.json();
       const accountId = accJson.account.id;
 
       // 2. Add starting balance transaction if > 0
-      const balVal = parseFloat(accountForm.startingBalanceStr);
+      const balVal = parseFloat(accountForm.startingBalanceStr.replace(/[^0-9.-]+/g, ""));
       if (!isNaN(balVal) && balVal !== 0) {
         const cents = Math.round(balVal * 100);
         await fetch("/api/transactions", {
@@ -100,24 +100,24 @@ export default function SettingsPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             date: new Date().toISOString().split("T")[0],
-            payee: "Starting Balance",
+            payee: "Saldo Awal",
             accountId,
             toAccountId: null,
-            categoryId: null, // Ready to assign
-            memo: "Account opened",
+            categoryId: null, // Siap Dialokasikan
+            memo: "Pembukaan rekening",
             amount: cents,
             cleared: true,
           }),
         });
       }
 
-      showMessage("Account created successfully!");
-      setAccountForm({ name: "", type: "CHECKING", startingBalanceStr: "0.00" });
+      showMessage("Rekening baru berhasil dibuat!");
+      setAccountForm({ name: "", type: "CHECKING", startingBalanceStr: "0" });
       
       // Dispatch refresh event to update sidebar
       window.dispatchEvent(new Event("refresh-data"));
     } catch (err: any) {
-      showMessage(err.message || "Failed to create account", "error");
+      showMessage(err.message || "Gagal membuat rekening", "error");
     } finally {
       setAccLoading(false);
     }
@@ -133,13 +133,13 @@ export default function SettingsPage() {
         body: JSON.stringify({ name: groupForm.name }),
       });
 
-      if (!res.ok) throw new Error("Failed to create category group");
+      if (!res.ok) throw new Error("Gagal membuat grup kategori");
 
-      showMessage("Category group created!");
+      showMessage("Grup kategori berhasil dibuat!");
       setGroupForm({ name: "" });
       await fetchData();
     } catch (err: any) {
-      showMessage(err.message || "Failed to create group", "error");
+      showMessage(err.message || "Gagal membuat grup kategori", "error");
     } finally {
       setGroupLoading(false);
     }
@@ -158,13 +158,13 @@ export default function SettingsPage() {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to create category");
+      if (!res.ok) throw new Error("Gagal membuat kategori");
 
-      showMessage("Category created!");
+      showMessage("Kategori baru berhasil dibuat!");
       setCategoryForm((prev) => ({ ...prev, name: "" }));
       await fetchData();
     } catch (err: any) {
-      showMessage(err.message || "Failed to create category", "error");
+      showMessage(err.message || "Gagal membuat kategori", "error");
     } finally {
       setCatLoading(false);
     }
@@ -181,9 +181,9 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Settings & Sharing</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Pengaturan & Berbagi</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Manage your shared budget workspace, accounts, and envelopes.
+          Kelola anggaran bersama, rekening bank, dan pos pengeluaran keluarga.
         </p>
       </div>
 
@@ -203,10 +203,10 @@ export default function SettingsPage() {
         {/* Collaborative status card */}
         <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-6">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <span>🤝</span> Budget Co-management
+            <span>🤝</span> Pengelolaan Anggaran Bersama
           </h2>
           <p className="text-sm text-gray-500">
-            This budget is shared and co-managed in real-time. Any adjustments to accounts or categories will immediately update for both partners.
+            Anggaran ini dikelola bersama secara real-time. Setiap penyesuaian rekening atau alokasi kategori akan langsung diperbarui di kedua perangkat (Ayah & Bunda).
           </p>
 
           <div className="space-y-3">
@@ -214,12 +214,12 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3">
                 <span className="text-2xl">👨‍💼</span>
                 <div>
-                  <p className="text-sm font-bold text-gray-800 dark:text-white">Ayah (Father)</p>
-                  <p className="text-xs text-gray-400">Owner role</p>
+                  <p className="text-sm font-bold text-gray-800 dark:text-white">Ayah (Kepala Keluarga)</p>
+                  <p className="text-xs text-gray-400">Pemilik Utama</p>
                 </div>
               </div>
               <span className="text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full font-semibold">
-                Connected 🟢
+                Terhubung 🟢
               </span>
             </div>
 
@@ -227,12 +227,12 @@ export default function SettingsPage() {
               <div className="flex items-center gap-3">
                 <span className="text-2xl">👩‍💼</span>
                 <div>
-                  <p className="text-sm font-bold text-gray-800 dark:text-white">Bunda (Mother)</p>
-                  <p className="text-xs text-gray-400">Co-manager role</p>
+                  <p className="text-sm font-bold text-gray-800 dark:text-white">Bunda (Istri)</p>
+                  <p className="text-xs text-gray-400">Pengelola Bersama</p>
                 </div>
               </div>
               <span className="text-xs bg-green-500/10 text-green-600 px-2 py-0.5 rounded-full font-semibold">
-                Connected 🟢
+                Terhubung 🟢
               </span>
             </div>
           </div>
@@ -241,17 +241,17 @@ export default function SettingsPage() {
         {/* Add Account form */}
         <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <span>💳</span> Add New Account
+            <span>💳</span> Tambah Rekening Baru
           </h2>
           <form onSubmit={handleAddAccount} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-                Account Name
+                Nama Rekening
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Credit Card Gold, Joint Checking..."
+                placeholder="misal: BCA Tabungan, Kartu Kredit Mandiri, Dompet Kas..."
                 value={accountForm.name}
                 onChange={(e) => setAccountForm({ ...accountForm, name: e.target.value })}
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden focus:border-brand-500"
@@ -261,33 +261,35 @@ export default function SettingsPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-                  Account Type
+                  Tipe Rekening
                 </label>
                 <select
                   value={accountForm.type}
                   onChange={(e) => setAccountForm({ ...accountForm, type: e.target.value })}
                   className="w-full px-3 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden focus:border-brand-500"
                 >
-                  <option value="CHECKING">Checking Account</option>
-                  <option value="SAVINGS">Savings Account</option>
-                  <option value="CREDIT_CARD">Credit Card</option>
-                  <option value="CASH">Cash / Wallet</option>
+                  <option value="CHECKING">Rekening Giro / Utama</option>
+                  <option value="SAVINGS">Tabungan</option>
+                  <option value="CREDIT_CARD">Kartu Kredit</option>
+                  <option value="CASH">Kas Tunai / Dompet</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-                  Starting Balance ($)
+                  Saldo Awal (Rp)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">Rp</span>
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
                     required
-                    value={accountForm.startingBalanceStr}
-                    onChange={(e) => setAccountForm({ ...accountForm, startingBalanceStr: e.target.value })}
-                    className="w-full pl-8 pr-4 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden focus:border-brand-500"
+                    value={accountForm.startingBalanceStr !== "" ? Number(accountForm.startingBalanceStr).toLocaleString('id-ID') : ""}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/[^0-9]/g, "");
+                      setAccountForm({ ...accountForm, startingBalanceStr: digits });
+                    }}
+                    className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden focus:border-brand-500"
                   />
                 </div>
               </div>
@@ -298,7 +300,7 @@ export default function SettingsPage() {
               disabled={accLoading || !accountForm.name}
               className="w-full py-2.5 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-all shadow-md"
             >
-              {accLoading ? "Creating Account..." : "Create Account"}
+              {accLoading ? "Membuat Rekening..." : "Buat Rekening"}
             </button>
           </form>
         </div>
@@ -308,17 +310,17 @@ export default function SettingsPage() {
         {/* Add Category Group */}
         <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <span>📁</span> Add Category Group
+            <span>📁</span> Tambah Grup Kategori
           </h2>
           <form onSubmit={handleAddCategoryGroup} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-                Group Name
+                Nama Grup
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Subscriptions, Kids, Projects..."
+                placeholder="misal: Pendidikan Anak, Liburan, Tagihan Bulanan..."
                 value={groupForm.name}
                 onChange={(e) => setGroupForm({ ...groupForm, name: e.target.value })}
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden focus:border-brand-500"
@@ -330,7 +332,7 @@ export default function SettingsPage() {
               disabled={groupLoading || !groupForm.name}
               className="w-full py-2.5 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-all shadow-md"
             >
-              {groupLoading ? "Creating Group..." : "Create Category Group"}
+              {groupLoading ? "Membuat Grup..." : "Buat Grup Kategori"}
             </button>
           </form>
         </div>
@@ -338,12 +340,12 @@ export default function SettingsPage() {
         {/* Add Category under Group */}
         <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800">
           <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-            <span>🏷️</span> Add Category (Envelope)
+            <span>🏷️</span> Tambah Kategori (Pos Pengeluaran)
           </h2>
           <form onSubmit={handleAddCategory} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-                Category Group
+                Grup Kategori
               </label>
               <select
                 value={categoryForm.groupId}
@@ -360,12 +362,12 @@ export default function SettingsPage() {
 
             <div>
               <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-                Category Name
+                Nama Kategori
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Netflix, School Fees, Pocket Money..."
+                placeholder="misal: Uang Saku, SPP Sekolah, Internet..."
                 value={categoryForm.name}
                 onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })}
                 className="w-full px-3 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden focus:border-brand-500"
@@ -377,7 +379,7 @@ export default function SettingsPage() {
               disabled={catLoading || !categoryForm.name || !categoryForm.groupId}
               className="w-full py-2.5 bg-brand-500 hover:bg-brand-600 disabled:opacity-50 text-white rounded-xl font-semibold text-sm transition-all shadow-md"
             >
-              {catLoading ? "Creating Category..." : "Create Category"}
+              {catLoading ? "Membuat Kategori..." : "Buat Kategori"}
             </button>
           </form>
         </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { getBudgetSheet } from '@/lib/budget';
+import { createNotification } from '@/lib/notifications';
 
 export async function GET(req: NextRequest) {
   try {
@@ -70,6 +71,13 @@ export async function POST(req: NextRequest) {
 
     const budgetId = member.budgetId;
 
+    // Get category name
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+
+    const categoryName = category ? category.name : 'Kategori';
+
     // Upsert monthly budget allocation
     const monthlyBudget = await prisma.monthlyBudget.upsert({
       where: {
@@ -89,6 +97,14 @@ export async function POST(req: NextRequest) {
         assigned: parseInt(assigned, 10),
       },
     });
+
+    // Create notification
+    const formattedAmount = "Rp " + Math.abs(parseInt(assigned, 10) / 100).toLocaleString('id-ID');
+    const monthLabel = new Date(month).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+    await createNotification(
+      budgetId,
+      `${session.name} mengubah anggaran ${categoryName} untuk bulan ${monthLabel} menjadi ${formattedAmount}`
+    );
 
     return NextResponse.json({ success: true, monthlyBudget });
   } catch (error: any) {

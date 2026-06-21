@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 export async function GET(req: NextRequest) {
   try {
@@ -90,6 +91,12 @@ export async function POST(req: NextRequest) {
         isActive: true,
       },
     });
+
+    // Create notification
+    await createNotification(
+      budgetId,
+      `${session.name} membuat rekening baru: ${name}`
+    );
 
     return NextResponse.json({ success: true, account: newAccount });
   } catch (error: any) {

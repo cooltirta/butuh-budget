@@ -62,7 +62,7 @@ export default function BudgetSheet() {
         const editValues: { [catId: string]: string } = {};
         json.categoryGroups.forEach((group: CategoryGroup) => {
           group.categories.forEach((cat: CategoryBudget) => {
-            editValues[cat.id] = (cat.assigned / 100).toFixed(2);
+            editValues[cat.id] = (cat.assigned / 100).toFixed(0); // integer for Rp
           });
         });
         setEditingValue(editValues);
@@ -87,15 +87,16 @@ export default function BudgetSheet() {
   };
 
   const formatMonthName = (date: Date) => {
-    return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+    return date.toLocaleDateString("id-ID", { month: "long", year: "numeric" });
   };
 
   const formatCurrency = (cents: number) => {
-    const dollars = cents / 100;
-    return new Intl.NumberFormat("en-US", {
+    const rupiah = cents / 100;
+    return new Intl.NumberFormat("id-ID", {
       style: "currency",
-      currency: "USD",
-    }).format(dollars);
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(rupiah);
   };
 
   const handleAssignedChange = (catId: string, val: string) => {
@@ -103,7 +104,7 @@ export default function BudgetSheet() {
   };
 
   const saveAssignment = async (catId: string, valueStr: string) => {
-    const numericVal = parseFloat(valueStr);
+    const numericVal = parseFloat(valueStr.replace(/[^0-9.-]+/g, ""));
     if (isNaN(numericVal)) return;
 
     setSavingCategory(catId);
@@ -136,10 +137,10 @@ export default function BudgetSheet() {
     e.preventDefault();
     if (!overspentCat || !coverSourceCatId || !coverAmount) return;
 
-    const amountInDollars = parseFloat(coverAmount);
-    if (isNaN(amountInDollars) || amountInDollars <= 0) return;
+    const amountInRupiah = parseFloat(coverAmount);
+    if (isNaN(amountInRupiah) || amountInRupiah <= 0) return;
 
-    const amountCents = Math.round(amountInDollars * 100);
+    const amountCents = Math.round(amountInRupiah * 100);
 
     // Find source category details
     let sourceCat: CategoryBudget | undefined;
@@ -194,7 +195,7 @@ export default function BudgetSheet() {
   const openCoverModal = (cat: CategoryBudget) => {
     setOverspentCat(cat);
     const absOverspent = Math.abs(cat.available);
-    setCoverAmount((absOverspent / 100).toFixed(2));
+    setCoverAmount((absOverspent / 100).toFixed(0));
     setIsCoverModalOpen(true);
   };
 
@@ -217,7 +218,7 @@ export default function BudgetSheet() {
           >
             &larr;
           </button>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white min-w-[180px] text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white min-w-[200px] text-center">
             {formatMonthName(currentDate)}
           </h1>
           <button
@@ -240,7 +241,7 @@ export default function BudgetSheet() {
         >
           <div>
             <p className="text-xs uppercase font-bold tracking-wider opacity-85">
-              Ready to Assign
+              Siap Dialokasikan
             </p>
             <p className="text-3xl font-extrabold mt-1">
               {formatCurrency(data?.readyToAssign ?? 0)}
@@ -257,7 +258,7 @@ export default function BudgetSheet() {
         <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-              Total Budgeted
+              Total Dianggarkan
             </p>
             <p className="text-2xl font-bold text-gray-800 dark:text-white mt-1">
               {formatCurrency(data?.totalBudgeted ?? 0)}
@@ -269,7 +270,7 @@ export default function BudgetSheet() {
         <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-              Total Activity
+              Total Aktivitas
             </p>
             <p className="text-2xl font-bold text-gray-800 dark:text-white mt-1">
               {formatCurrency(data?.totalActivity ?? 0)}
@@ -281,7 +282,7 @@ export default function BudgetSheet() {
         <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-              Total Available
+              Total Tersedia
             </p>
             <p className="text-2xl font-bold text-gray-800 dark:text-white mt-1">
               {formatCurrency(data?.totalAvailable ?? 0)}
@@ -297,10 +298,10 @@ export default function BudgetSheet() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-gray-100 dark:border-gray-800 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider bg-gray-50 dark:bg-white/[0.02]">
-                <th className="py-4 px-6">Category</th>
-                <th className="py-4 px-6 w-[200px] text-right">Assigned</th>
-                <th className="py-4 px-6 w-[180px] text-right">Activity</th>
-                <th className="py-4 px-6 w-[180px] text-right">Available</th>
+                <th className="py-4 px-6">Kategori</th>
+                <th className="py-4 px-6 w-[200px] text-right">Dianggarkan</th>
+                <th className="py-4 px-6 w-[180px] text-right">Aktivitas</th>
+                <th className="py-4 px-6 w-[180px] text-right">Tersedia</th>
               </tr>
             </thead>
             <tbody>
@@ -332,20 +333,24 @@ export default function BudgetSheet() {
                         {/* Assigned Input */}
                         <td className="py-3.5 px-6 text-right">
                           <div className="relative inline-block w-full max-w-[150px]">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-450 text-xs font-semibold">Rp</span>
                             <input
                               type="text"
-                              value={editingValue[cat.id] ?? ""}
-                              onChange={(e) => handleAssignedChange(cat.id, e.target.value)}
-                              onBlur={() => saveAssignment(cat.id, editingValue[cat.id])}
+                              value={editingValue[cat.id] !== undefined ? Number(editingValue[cat.id]).toLocaleString('id-ID') : ""}
+                              onChange={(e) => {
+                                // Strip formatting, keep digits
+                                const digits = e.target.value.replace(/[^0-9]/g, "");
+                                handleAssignedChange(cat.id, digits);
+                              }}
+                              onBlur={() => saveAssignment(cat.id, editingValue[cat.id] || "0")}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
-                                  saveAssignment(cat.id, editingValue[cat.id]);
+                                  saveAssignment(cat.id, editingValue[cat.id] || "0");
                                   (e.target as HTMLInputElement).blur();
                                 }
                               }}
                               disabled={isSaving}
-                              className={`w-full text-right bg-gray-50 hover:bg-gray-100 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] border border-gray-100 dark:border-gray-800 rounded-lg py-1 px-3 pl-6 text-sm font-semibold text-gray-700 dark:text-white focus:border-brand-500 focus:outline-hidden focus:ring-1 focus:ring-brand-500 ${
+                              className={`w-full text-right bg-gray-50 hover:bg-gray-100 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] border border-gray-100 dark:border-gray-800 rounded-lg py-1 px-3 pl-8 text-sm font-semibold text-gray-700 dark:text-white focus:border-brand-500 focus:outline-hidden focus:ring-1 focus:ring-brand-500 ${
                                 isSaving ? "opacity-50" : ""
                               }`}
                             />
@@ -353,7 +358,7 @@ export default function BudgetSheet() {
                         </td>
 
                         {/* Activity */}
-                        <td className="py-3.5 px-6 text-right font-semibold text-sm text-gray-600 dark:text-gray-400">
+                        <td className="py-3.5 px-6 text-right font-semibold text-sm text-gray-650 dark:text-gray-400">
                           {formatCurrency(cat.activity)}
                         </td>
 
@@ -368,7 +373,7 @@ export default function BudgetSheet() {
                                 ? "bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/20"
                                 : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
                             }`}
-                            title={isAvailableNegative ? "Click to cover overspending!" : undefined}
+                            title={isAvailableNegative ? "Klik untuk menutup pengeluaran berlebih!" : undefined}
                           >
                             {formatCurrency(cat.available)}
                             {isAvailableNegative && <span className="ml-1 text-[10px]">🩹</span>}
@@ -382,7 +387,7 @@ export default function BudgetSheet() {
               {(data?.categoryGroups.length ?? 0) === 0 && (
                 <tr>
                   <td colSpan={4} className="py-8 text-center text-gray-400">
-                    No category groups set up. Let's seed your database or add categories in Settings.
+                    Belum ada grup kategori. Tambahkan di Pengaturan.
                   </td>
                 </tr>
               )}
@@ -397,34 +402,36 @@ export default function BudgetSheet() {
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 w-full max-w-md overflow-hidden shadow-theme-lg">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <span>🩹</span> Roll with the Punches
+                <span>🩹</span> Atur Ulang Anggaran
               </h2>
               <p className="text-xs text-gray-500 mt-1">
-                Cover the overspending in <strong>{overspentCat.name}</strong> by moving money.
+                Tutup pengeluaran berlebih di kategori <strong>{overspentCat.name}</strong> dengan memindahkan dana.
               </p>
             </div>
             <form onSubmit={handleCoverOverspending}>
               <div className="p-6 space-y-4">
                 {/* Status bar */}
                 <div className="p-3.5 bg-red-500/10 text-red-500 font-semibold rounded-xl text-xs flex justify-between">
-                  <span>Overspent amount:</span>
+                  <span>Kelebihan Pengeluaran:</span>
                   <span>{formatCurrency(overspentCat.available)}</span>
                 </div>
 
                 {/* Amount to move */}
                 <div>
                   <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-                    Amount to Move ($)
+                    Jumlah Dana yang Dipindahkan (Rp)
                   </label>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">Rp</span>
                     <input
-                      type="number"
-                      step="0.01"
+                      type="text"
                       required
-                      value={coverAmount}
-                      onChange={(e) => setCoverAmount(e.target.value)}
-                      className="w-full pl-8 pr-4 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:border-brand-500 focus:outline-hidden"
+                      value={Number(coverAmount).toLocaleString('id-ID')}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/[^0-9]/g, "");
+                        setCoverAmount(digits);
+                      }}
+                      className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:border-brand-500 focus:outline-hidden"
                     />
                   </div>
                 </div>
@@ -432,7 +439,7 @@ export default function BudgetSheet() {
                 {/* Source Category selector */}
                 <div>
                   <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
-                    Move Money From Category
+                    Pindahkan Uang Dari Kategori
                   </label>
                   <select
                     required
@@ -440,14 +447,14 @@ export default function BudgetSheet() {
                     onChange={(e) => setCoverSourceCatId(e.target.value)}
                     className="w-full px-3 py-2.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:border-brand-500 focus:outline-hidden"
                   >
-                    <option value="">-- Select Category --</option>
+                    <option value="">-- Pilih Kategori Sumber --</option>
                     {data?.categoryGroups.map((group) => (
                       <optgroup key={group.id} label={group.name}>
                         {group.categories
                           .filter((c) => c.id !== overspentCat.id && c.available > 0)
                           .map((c) => (
                             <option key={c.id} value={c.id}>
-                              {c.name} (Available: {formatCurrency(c.available)})
+                              {c.name} (Tersedia: {formatCurrency(c.available)})
                             </option>
                           ))}
                       </optgroup>
@@ -465,14 +472,14 @@ export default function BudgetSheet() {
                   }}
                   className="px-4 py-2 border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl text-sm font-semibold transition-all text-gray-700 dark:text-gray-300"
                 >
-                  Cancel
+                  Batal
                 </button>
                 <button
                   type="submit"
                   disabled={!coverSourceCatId || !coverAmount}
                   className="px-5 py-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-55 disabled:hover:bg-brand-500 rounded-xl text-sm font-semibold text-white transition-all shadow-lg shadow-brand-500/20"
                 >
-                  Confirm Move
+                  Konfirmasi Pindah Dana
                 </button>
               </div>
             </form>

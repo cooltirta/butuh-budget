@@ -97,7 +97,7 @@ export default function UserDropdown() {
       >
         <div className="pb-3 border-b border-gray-100 dark:border-gray-800">
           <span className="block font-semibold text-gray-900 dark:text-white">
-            {user.name === "Ayah" ? "Ayah (Father)" : "Bunda (Mother)"}
+            {user.name === "Ayah" ? "Ayah" : "Bunda"}
           </span>
           <span className="mt-0.5 block text-xs text-gray-500 dark:text-gray-400">
             {user.name.toLowerCase()}@wnab-shared.local
@@ -106,7 +106,7 @@ export default function UserDropdown() {
 
         <button
           onClick={handleLogout}
-          className="flex w-full items-center gap-3 px-3 py-2.5 mt-3 font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl text-sm transition-all text-left"
+          className="flex w-full items-center gap-3 px-3 py-2.5 mt-3 font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-xl text-sm transition-all shadow-theme-xs text-left"
         >
           <svg
             className="stroke-current"
@@ -123,7 +123,7 @@ export default function UserDropdown() {
               strokeLinejoin="round"
             />
           </svg>
-          Sign Out
+          Keluar (Sign Out)
         </button>
       </Dropdown>
     </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { createNotification } from '@/lib/notifications';
 
 export async function POST(req: NextRequest) {
   try {
@@ -39,6 +40,12 @@ export async function POST(req: NextRequest) {
         sortOrder,
       },
     });
+
+    // Create notification
+    await createNotification(
+      budgetId,
+      `${session.name} membuat grup kategori baru: "${name}"`
+    );
 
     return NextResponse.json({ success: true, categoryGroup: newGroup });
   } catch (error: any) {

@@ -8,6 +8,7 @@ import {
   TableIcon,
   UserCircleIcon,
   HorizontaLDots,
+  PieChartIcon,
 } from "../icons/index";
 
 type Account = {
@@ -18,11 +19,12 @@ type Account = {
 };
 
 const formatCurrency = (cents: number) => {
-  const dollars = cents / 100;
-  return new Intl.NumberFormat("en-US", {
+  const rupiah = cents / 100;
+  return new Intl.NumberFormat("id-ID", {
     style: "currency",
-    currency: "USD",
-  }).format(dollars);
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(rupiah);
 };
 
 const AppSidebar: React.FC = () => {
@@ -111,7 +113,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "BUDGETING"
+                  "PENGANGGARAN"
                 ) : (
                   <HorizontaLDots />
                 )}
@@ -128,7 +130,22 @@ const AppSidebar: React.FC = () => {
                       <GridIcon />
                     </span>
                     {(isExpanded || isHovered || isMobileOpen) && (
-                      <span className="menu-item-text">Budget Sheet</span>
+                      <span className="menu-item-text">Lembar Anggaran</span>
+                    )}
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/dashboard/reports"
+                    className={`menu-item group ${
+                      isActive("/dashboard/reports") ? "menu-item-active" : "menu-item-inactive"
+                    }`}
+                  >
+                    <span className={isActive("/dashboard/reports") ? "menu-item-icon-active" : "menu-item-icon-inactive"}>
+                      <PieChartIcon />
+                    </span>
+                    {(isExpanded || isHovered || isMobileOpen) && (
+                      <span className="menu-item-text">Laporan Keuangan</span>
                     )}
                   </Link>
                 </li>
@@ -143,7 +160,7 @@ const AppSidebar: React.FC = () => {
                       <TableIcon />
                     </span>
                     {(isExpanded || isHovered || isMobileOpen) && (
-                      <span className="menu-item-text">All Accounts</span>
+                      <span className="menu-item-text">Semua Rekening</span>
                     )}
                   </Link>
                 </li>
@@ -160,7 +177,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "ACCOUNTS"
+                  "REKENING"
                 ) : (
                   <HorizontaLDots />
                 )}
@@ -193,12 +210,12 @@ const AppSidebar: React.FC = () => {
                     </li>
                   ))}
                   {accounts.length === 0 && (
-                    <li className="text-xs text-gray-400 px-3 py-1">No accounts active</li>
+                    <li className="text-xs text-gray-400 px-3 py-1">Tidak ada rekening aktif</li>
                   )}
                 </ul>
               ) : (
                 <div className="flex flex-col items-center gap-2">
-                  <span className="text-xs bg-gray-100 dark:bg-gray-800 p-1.5 rounded-full text-gray-500" title="Accounts">
+                  <span className="text-xs bg-gray-100 dark:bg-gray-800 p-1.5 rounded-full text-gray-500" title="Rekening">
                     💳
                   </span>
                 </div>
@@ -215,7 +232,7 @@ const AppSidebar: React.FC = () => {
                 }`}
               >
                 {isExpanded || isHovered || isMobileOpen ? (
-                  "CONFIGURATION"
+                  "KONFIGURASI"
                 ) : (
                   <HorizontaLDots />
                 )}
@@ -232,7 +249,7 @@ const AppSidebar: React.FC = () => {
                       <UserCircleIcon />
                     </span>
                     {(isExpanded || isHovered || isMobileOpen) && (
-                      <span className="menu-item-text">Settings & Sharing</span>
+                      <span className="menu-item-text">Pengaturan & Berbagi</span>
                     )}
                   </Link>
                 </li>

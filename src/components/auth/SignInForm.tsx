@@ -19,14 +19,14 @@ export default function SignInForm() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Login failed");
+        throw new Error(data.error || "Login gagal");
       }
 
       // Redirect to budget page
       router.push("/dashboard/budget");
       router.refresh();
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      setError(err.message || "Terjadi kesalahan");
       setLoading(null);
     }
   };
@@ -38,10 +38,10 @@ export default function SignInForm() {
           WNAB 💸
         </h1>
         <p className="text-lg font-medium text-gray-700 dark:text-gray-300">
-          We Need a Budget
+          We Need a Budget (Butuh Anggaran)
         </p>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-          Collaborative household budgeting. Select your profile to enter:
+          Pengelolaan anggaran keluarga kolaboratif. Pilih profil untuk masuk:
         </p>
       </div>
 
@@ -61,10 +61,10 @@ export default function SignInForm() {
             <span className="text-4xl">👨‍💼</span>
             <div>
               <p className="font-semibold text-gray-900 dark:text-white text-lg">
-                Login as Ayah
+                Masuk sebagai Ayah
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Manage accounts and budgets as Father
+                Kelola anggaran & transaksi sebagai Kepala Keluarga
               </p>
             </div>
           </div>
@@ -86,10 +86,10 @@ export default function SignInForm() {
             <span className="text-4xl">👩‍💼</span>
             <div>
               <p className="font-semibold text-gray-900 dark:text-white text-lg">
-                Login as Bunda
+                Masuk sebagai Bunda
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Manage accounts and budgets as Mother
+                Kelola anggaran & transaksi bersama Ayah
               </p>
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function SignInForm() {
 
       <div className="mt-8 text-center">
         <p className="text-xs text-gray-400 dark:text-gray-500">
-          Co-management mode active. All changes are synchronized in real-time.
+          Mode pengelolaan bersama aktif. Semua perubahan disinkronkan secara real-time.
         </p>
       </div>
     </div>
