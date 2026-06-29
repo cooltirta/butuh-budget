@@ -85,6 +85,9 @@ model Category {
   categoryGroup   CategoryGroup   @relation(fields: [categoryGroupId], references: [id], onDelete: Cascade)
   monthlyBudgets  MonthlyBudget[]
   transactions    Transaction[]
+  targetType      String?         // "MONTHLY_SAVINGS_BUILDER", "NEEDED_FOR_SPENDING", "SAVINGS_BALANCE"
+  targetAmount    Int?            // in cents
+  targetMonth     String?         // YYYY-MM-01
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
 }
@@ -114,6 +117,7 @@ model Transaction {
   memo          String?
   amount        Int       // in cents. Negative for outflow (spending), Positive for inflow (income)
   cleared       Boolean   @default(false)
+  reconciled    Boolean   @default(false)
   budget        Budget    @relation(fields: [budgetId], references: [id], onDelete: Cascade)
   account       Account   @relation("AccountTransactions", fields: [accountId], references: [id], onDelete: Cascade)
   toAccount     Account?  @relation("TransferTransactions", fields: [toAccountId], references: [id], onDelete: SetNull)

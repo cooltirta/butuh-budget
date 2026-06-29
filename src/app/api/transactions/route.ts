@@ -157,6 +157,10 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Transaction not found' }, { status: 404 });
     }
 
+    if (tx.reconciled) {
+      return NextResponse.json({ error: 'Transaksi telah direkonsiliasi dan tidak dapat dihapus.' }, { status: 400 });
+    }
+
     await prisma.transaction.delete({
       where: { id },
     });

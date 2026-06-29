@@ -8,6 +8,9 @@ type CategoryBudget = {
   assigned: number;
   activity: number;
   available: number;
+  targetType?: string | null;
+  targetAmount?: number | null;
+  targetMonth?: string | null;
 };
 
 type CategoryGroup = {
@@ -21,6 +24,7 @@ type BudgetData = {
   totalBudgeted: number;
   totalActivity: number;
   totalAvailable: number;
+  ageOfMoney: number;
   categoryGroups: CategoryGroup[];
 };
 
@@ -40,6 +44,15 @@ export default function BudgetSheet() {
   const [coverSourceCatId, setCoverSourceCatId] = useState<string>("");
   const [coverAmount, setCoverAmount] = useState<string>("");
   const [isCoverModalOpen, setIsCoverModalOpen] = useState(false);
+
+  // Budget targets state
+  const [isTargetModalOpen, setIsTargetModalOpen] = useState(false);
+  const [targetCat, setTargetCat] = useState<CategoryBudget | null>(null);
+  const [targetForm, setTargetForm] = useState({
+    targetType: "MONTHLY_SAVINGS_BUILDER",
+    amountStr: "",
+    targetMonth: new Date().toISOString().substring(0, 7) + "-01",
+  });
 
   const getMonthStr = (date: Date) => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-01`;
@@ -199,6 +212,86 @@ export default function BudgetSheet() {
     setIsCoverModalOpen(true);
   };
 
+  const openTargetModal = (cat: CategoryBudget) => {
+    setTargetCat(cat);
+    setTargetForm({
+      targetType: cat.targetType || "MONTHLY_SAVINGS_BUILDER",
+      amountStr: cat.targetAmount ? (cat.targetAmount / 100).toFixed(0) : "",
+      targetMonth: cat.targetMonth || new Date().toISOString().substring(0, 7) + "-01",
+    });
+    setIsTargetModalOpen(true);
+  };
+
+  const handleSaveTarget = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!targetCat) return;
+
+    const parsedAmount = parseFloat(targetForm.amountStr.replace(/[^0-9.-]+/g, ""));
+    const amountCents = isNaN(parsedAmount) ? 0 : Math.round(parsedAmount * 100);
+
+    try {
+      setLoading(true);
+      const res = await fetch("/api/budget/target", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          categoryId: targetCat.id,
+          targetType: targetForm.targetType || null,
+          targetAmount: amountCents || null,
+          targetMonth: targetForm.targetMonth || null,
+        }),
+      });
+
+      if (res.ok) {
+        setIsTargetModalOpen(false);
+        setTargetCat(null);
+        await fetchBudget();
+      }
+    } catch (err) {
+      console.error("Failed to save target", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteTarget = async () => {
+    if (!targetCat) return;
+    try {
+      setLoading(true);
+      const res = await fetch("/api/budget/target", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          categoryId: targetCat.id,
+          targetType: null,
+          targetAmount: null,
+          targetMonth: null,
+        }),
+      });
+
+      if (res.ok) {
+        setIsTargetModalOpen(false);
+        setTargetCat(null);
+        await fetchBudget();
+      }
+    } catch (err) {
+      console.error("Failed to delete target", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const checkUnderfunded = (cat: CategoryBudget) => {
+    if (!cat.targetType || !cat.targetAmount) return false;
+    if (cat.targetType === "MONTHLY_SAVINGS_BUILDER") {
+      return cat.assigned < cat.targetAmount;
+    }
+    if (cat.targetType === "NEEDED_FOR_SPENDING" || cat.targetType === "SAVINGS_BALANCE") {
+      return cat.available < cat.targetAmount;
+    }
+    return false;
+  };
+
   if (loading && !data) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -254,7 +347,7 @@ export default function BudgetSheet() {
       </div>
 
       {/* Monthly Summary Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
@@ -290,6 +383,18 @@ export default function BudgetSheet() {
           </div>
           <span className="text-xl p-3 bg-green-50 dark:bg-green-950/20 text-green-500 rounded-xl">🏦</span>
         </div>
+
+        <div className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              Usia Uang
+            </p>
+            <p className="text-2xl font-bold text-gray-850 dark:text-white mt-1">
+              {data?.ageOfMoney ?? 0} Hari
+            </p>
+          </div>
+          <span className="text-xl p-3 bg-amber-50 dark:bg-amber-950/20 text-amber-500 rounded-xl">⏳</span>
+        </div>
       </div>
 
       {/* Budget Grid Sheet */}
@@ -319,6 +424,7 @@ export default function BudgetSheet() {
                     const isAvailableNegative = cat.available < 0;
                     const isAvailablePositive = cat.available > 0;
                     const isSaving = savingCategory === cat.id;
+                    const isUnder = checkUnderfunded(cat);
 
                     return (
                       <tr
@@ -327,7 +433,28 @@ export default function BudgetSheet() {
                       >
                         {/* Name */}
                         <td className="py-3.5 px-6 font-medium text-sm text-gray-800 dark:text-white/80">
-                          {cat.name}
+                          <div className="flex items-center justify-between gap-2">
+                            <div>
+                              <span>{cat.name}</span>
+                              {cat.targetType && cat.targetAmount && (
+                                <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 flex items-center gap-1 font-normal">
+                                  <span>🎯</span>
+                                  <span>
+                                    {cat.targetType === "MONTHLY_SAVINGS_BUILDER" && `Kumpulkan Rp ${(cat.targetAmount / 100).toLocaleString('id-ID')} / bln`}
+                                    {cat.targetType === "NEEDED_FOR_SPENDING" && `Butuh Rp ${(cat.targetAmount / 100).toLocaleString('id-ID')} ${cat.targetMonth ? `s.d. ${new Date(cat.targetMonth).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' })}` : ''}`}
+                                    {cat.targetType === "SAVINGS_BALANCE" && `Target Saldo Rp ${(cat.targetAmount / 100).toLocaleString('id-ID')}`}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => openTargetModal(cat)}
+                              className="text-gray-300 hover:text-brand-500 transition-all text-xs focus:outline-hidden"
+                              title="Atur target anggaran"
+                            >
+                              🎯
+                            </button>
+                          </div>
                         </td>
 
                         {/* Assigned Input */}
@@ -365,18 +492,33 @@ export default function BudgetSheet() {
                         {/* Available Balance Pill */}
                         <td className="py-3.5 px-6 text-right">
                           <span
-                            onClick={() => isAvailableNegative && openCoverModal(cat)}
+                            onClick={() => {
+                              if (isAvailableNegative) {
+                                openCoverModal(cat);
+                              } else if (isUnder) {
+                                openTargetModal(cat);
+                              }
+                            }}
                             className={`inline-block px-3 py-1 rounded-full text-xs font-bold transition-all ${
                               isAvailableNegative
                                 ? "bg-red-500/20 text-red-500 border border-red-500/20 cursor-pointer hover:bg-red-500/30"
+                                : isUnder
+                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 cursor-pointer hover:bg-amber-500/20"
                                 : isAvailablePositive
                                 ? "bg-green-500/20 text-green-600 dark:text-green-400 border border-green-500/20"
                                 : "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
                             }`}
-                            title={isAvailableNegative ? "Klik untuk menutup pengeluaran berlebih!" : undefined}
+                            title={
+                              isAvailableNegative
+                                ? "Klik untuk menutup pengeluaran berlebih!"
+                                : isUnder
+                                ? "Dana belum mencukupi target anggaran! Klik untuk ubah."
+                                : undefined
+                            }
                           >
                             {formatCurrency(cat.available)}
                             {isAvailableNegative && <span className="ml-1 text-[10px]">🩹</span>}
+                            {isUnder && <span className="ml-1 text-[10px]">⚠️</span>}
                           </span>
                         </td>
                       </tr>
@@ -481,6 +623,122 @@ export default function BudgetSheet() {
                 >
                   Konfirmasi Pindah Dana
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* BUDGET TARGET CONFIGURATION MODAL */}
+      {isTargetModalOpen && targetCat && (
+        <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 w-full max-w-md overflow-hidden shadow-theme-lg">
+            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span>🎯</span> Atur Target Anggaran
+                </h2>
+                <p className="text-xs text-gray-500 mt-1">
+                  Kategori: <strong>{targetCat.name}</strong>
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsTargetModalOpen(false);
+                  setTargetCat(null);
+                }}
+                className="text-gray-400 hover:text-gray-650 text-lg focus:outline-hidden"
+              >
+                &times;
+              </button>
+            </div>
+            <form onSubmit={handleSaveTarget}>
+              <div className="p-6 space-y-4">
+                {/* Target Type */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                    Tipe Target Anggaran
+                  </label>
+                  <select
+                    value={targetForm.targetType}
+                    onChange={(e) => setTargetForm({ ...targetForm, targetType: e.target.value })}
+                    className="w-full px-3 py-2.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:border-brand-500 focus:outline-hidden"
+                  >
+                    <option value="MONTHLY_SAVINGS_BUILDER">Kumpulkan Dana Bulanan (Monthly Builder)</option>
+                    <option value="NEEDED_FOR_SPENDING">Butuh Dana untuk Belanja (Needed for Spending)</option>
+                    <option value="SAVINGS_BALANCE">Target Saldo Tabungan (Savings Balance)</option>
+                  </select>
+                </div>
+
+                {/* Target Amount */}
+                <div>
+                  <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                    Jumlah Target Dana (Rp)
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">Rp</span>
+                    <input
+                      type="text"
+                      required
+                      placeholder="0"
+                      value={targetForm.amountStr !== "" ? Number(targetForm.amountStr).toLocaleString('id-ID') : ""}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/[^0-9]/g, "");
+                        setTargetForm({ ...targetForm, amountStr: digits });
+                      }}
+                      className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:border-brand-500 focus:outline-hidden"
+                    />
+                  </div>
+                </div>
+
+                {/* Target Month/Date (only for NEEDED_FOR_SPENDING and SAVINGS_BALANCE) */}
+                {(targetForm.targetType === "NEEDED_FOR_SPENDING" || targetForm.targetType === "SAVINGS_BALANCE") && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                      Bulan Batas Target
+                    </label>
+                    <input
+                      type="month"
+                      required
+                      value={targetForm.targetMonth.substring(0, 7)}
+                      onChange={(e) => setTargetForm({ ...targetForm, targetMonth: e.target.value + "-01" })}
+                      className="w-full px-3 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:border-brand-500 focus:outline-hidden"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-white/[0.01] flex justify-between">
+                {targetCat.targetType ? (
+                  <button
+                    type="button"
+                    onClick={handleDeleteTarget}
+                    className="px-4 py-2 border border-red-200 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-500 rounded-xl text-sm font-semibold transition-all"
+                  >
+                    Hapus Target
+                  </button>
+                ) : (
+                  <div></div>
+                )}
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsTargetModalOpen(false);
+                      setTargetCat(null);
+                    }}
+                    className="px-4 py-2 border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl text-sm font-semibold transition-all text-gray-700 dark:text-gray-300"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!targetForm.amountStr}
+                    className="px-5 py-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-55 disabled:hover:bg-brand-500 rounded-xl text-sm font-semibold text-white transition-all shadow-lg shadow-brand-500/20"
+                  >
+                    Simpan Target
+                  </button>
+                </div>
               </div>
             </form>
           </div>

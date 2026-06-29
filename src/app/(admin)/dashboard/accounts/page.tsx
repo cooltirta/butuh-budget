@@ -24,6 +24,7 @@ type Transaction = {
   memo: string | null;
   amount: number; // in cents
   cleared: boolean;
+  reconciled: boolean;
   accountId: string;
   toAccountId: string | null;
   categoryId: string | null;
@@ -56,6 +57,11 @@ function AccountsRegister() {
     isOutflow: true, // true for expense, false for income
     cleared: true,
   });
+
+  // Reconciliation modal states
+  const [isReconcileModalOpen, setIsReconcileModalOpen] = useState(false);
+  const [actualBalanceStr, setActualBalanceStr] = useState("");
+  const [reconcileLoading, setReconcileLoading] = useState(false);
 
   const [txLoading, setTxLoading] = useState(false);
 
@@ -200,9 +206,49 @@ function AccountsRegister() {
       if (res.ok) {
         window.dispatchEvent(new Event("refresh-data"));
         await fetchData();
+      } else {
+        const json = await res.json();
+        alert(json.error || "Gagal menghapus transaksi.");
       }
     } catch (err) {
       console.error("Failed to delete transaction", err);
+    }
+  };
+
+  const openReconcileModal = () => {
+    if (!activeAccount) return;
+    setActualBalanceStr((activeAccount.balance / 100).toFixed(0));
+    setIsReconcileModalOpen(true);
+  };
+
+  const handleReconcileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeAccountId || !activeAccount) return;
+
+    const parsedBalance = parseFloat(actualBalanceStr.replace(/[^0-9.-]+/g, ""));
+    const balanceCents = isNaN(parsedBalance) ? 0 : Math.round(parsedBalance * 100);
+
+    setReconcileLoading(true);
+    try {
+      const res = await fetch("/api/transactions/reconcile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountId: activeAccountId,
+          actualBalance: balanceCents,
+        }),
+      });
+
+      if (res.ok) {
+        setIsReconcileModalOpen(false);
+        // Refresh sidebar balances
+        window.dispatchEvent(new Event("refresh-data"));
+        await fetchData();
+      }
+    } catch (err) {
+      console.error("Failed to reconcile account", err);
+    } finally {
+      setReconcileLoading(false);
     }
   };
 
@@ -238,6 +284,15 @@ function AccountsRegister() {
                 : formatCurrency(accounts.reduce((sum, a) => sum + a.balance, 0))}
             </p>
           </div>
+
+          {activeAccount && (
+            <button
+              onClick={openReconcileModal}
+              className="px-6 py-4 border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300 rounded-2xl font-semibold transition-all text-sm flex items-center gap-2"
+            >
+              ✔️ Rekonsiliasi
+            </button>
+          )}
 
           <button
             onClick={() => setIsModalOpen(true)}
@@ -329,12 +384,18 @@ function AccountsRegister() {
 
                     {/* Actions */}
                     <td className="py-3.5 px-6 text-center">
-                      <button
-                        onClick={() => handleDeleteTransaction(tx.id)}
-                        className="text-red-500 hover:text-red-650 text-sm font-semibold hover:underline"
-                      >
-                        Hapus
-                      </button>
+                      {tx.reconciled ? (
+                        <span className="text-green-600 dark:text-green-400 font-bold text-sm" title="Sudah direkonsiliasi & dikunci">
+                          🔒
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleDeleteTransaction(tx.id)}
+                          className="text-red-500 hover:text-red-650 text-sm font-semibold hover:underline"
+                        >
+                          Hapus
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
@@ -585,6 +646,99 @@ function AccountsRegister() {
           </div>
         </div>
       )}
+
+      {/* RECONCILIATION MODAL */}
+      {isReconcileModalOpen && activeAccount && (() => {
+        const parsedActual = parseFloat(actualBalanceStr.replace(/[^0-9.-]+/g, ""));
+        const actualCents = isNaN(parsedActual) ? 0 : Math.round(parsedActual * 100);
+        const diff = actualCents - activeAccount.balance;
+
+        return (
+          <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 w-full max-w-md overflow-hidden shadow-theme-lg">
+              <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span>✔️</span> Rekonsiliasi Rekening
+                </h2>
+                <button
+                  onClick={() => setIsReconcileModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-650 text-lg focus:outline-hidden"
+                >
+                  &times;
+                </button>
+              </div>
+              <form onSubmit={handleReconcileSubmit}>
+                <div className="p-6 space-y-4">
+                  {/* Account Name & Cleared Balance info */}
+                  <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 rounded-xl text-sm">
+                    <div>
+                      <span className="text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-wider block font-semibold">Rekening</span>
+                      <span className="font-bold text-gray-700 dark:text-gray-300">{activeAccount.name}</span>
+                    </div>
+                    <div>
+                      <span className="text-xs text-gray-400 dark:text-gray-500 font-semibold uppercase tracking-wider block font-semibold">Saldo Aplikasi</span>
+                      <span className="font-bold text-green-600 dark:text-green-400">{formatCurrency(activeAccount.balance)}</span>
+                    </div>
+                  </div>
+
+                  {/* Input actual bank balance */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                      Masukkan Saldo Rekening Bank Sebenarnya (Rp)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">Rp</span>
+                      <input
+                        type="text"
+                        required
+                        value={actualBalanceStr !== "" ? Number(actualBalanceStr).toLocaleString('id-ID') : ""}
+                        onChange={(e) => {
+                          const digits = e.target.value.replace(/[^0-9-]/g, ""); // Allow minus sign
+                          setActualBalanceStr(digits);
+                        }}
+                        className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:border-brand-500 focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Status Indicator */}
+                  {diff === 0 ? (
+                    <div className="p-3 bg-green-500/10 text-green-600 dark:text-green-400 font-semibold rounded-xl text-xs flex items-center gap-1.5 border border-green-500/15">
+                      <span>✓</span> Saldo cocok! Semua transaksi yang "cleared" akan dikunci.
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold rounded-xl text-xs flex flex-col gap-1 border border-amber-500/15">
+                      <div className="flex items-center gap-1.5">
+                        <span>⚠️</span> Terdapat selisih sebesar <strong>{formatCurrency(diff)}</strong>.
+                      </div>
+                      <span className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 font-normal block">
+                        Sistem akan membuat transaksi "Penyesuaian Rekonsiliasi" secara otomatis untuk menyamakan saldo.
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-white/[0.01] flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsReconcileModalOpen(false)}
+                    className="px-4 py-2 border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl text-sm font-semibold text-gray-700 dark:text-gray-300 transition-all"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={reconcileLoading}
+                    className="px-5 py-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-55 rounded-xl text-sm font-semibold text-white transition-all shadow-lg shadow-brand-500/20"
+                  >
+                    {reconcileLoading ? "Memproses..." : diff === 0 ? "Cocok & Kunci" : "Buat Penyesuaian & Kunci"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

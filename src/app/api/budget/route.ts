@@ -3,6 +3,7 @@ import { getSessionUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { getBudgetSheet } from '@/lib/budget';
 import { createNotification } from '@/lib/notifications';
+import { calculateAgeOfMoney } from '@/lib/ageOfMoney';
 
 export async function GET(req: NextRequest) {
   try {
@@ -30,10 +31,12 @@ export async function GET(req: NextRequest) {
 
     const budgetId = member.budgetId;
     const budgetSheet = await getBudgetSheet(budgetId, month);
+    const ageOfMoney = await calculateAgeOfMoney(budgetId);
 
     return NextResponse.json({
       budgetId,
       budgetName: member.budget.name,
+      ageOfMoney,
       ...budgetSheet,
     });
   } catch (error: any) {

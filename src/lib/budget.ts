@@ -6,6 +6,9 @@ export interface CategoryBudgetInfo {
   assigned: number;  // in cents
   activity: number;  // in cents
   available: number; // in cents
+  targetType?: string | null;
+  targetAmount?: number | null;
+  targetMonth?: string | null;
 }
 
 export interface CategoryGroupInfo {
@@ -146,6 +149,9 @@ export async function getBudgetSheet(budgetId: string, targetMonthStr: string) {
       assigned: targetMonthInfo[cat.id]?.assigned || 0,
       activity: targetMonthInfo[cat.id]?.activity || 0,
       available: targetMonthInfo[cat.id]?.available || 0,
+      targetType: cat.targetType,
+      targetAmount: cat.targetAmount,
+      targetMonth: cat.targetMonth,
     })),
   }));
 
