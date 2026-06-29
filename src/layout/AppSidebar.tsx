@@ -28,9 +28,14 @@ const formatCurrency = (cents: number) => {
 };
 
 const AppSidebar: React.FC = () => {
-  const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
+  const { isExpanded, isMobileOpen, isHovered, setIsHovered, closeMobileSidebar } = useSidebar();
   const pathname = usePathname();
   const [accounts, setAccounts] = useState<Account[]>([]);
+
+  // Close sidebar on page change (mobile)
+  useEffect(() => {
+    closeMobileSidebar();
+  }, [pathname, closeMobileSidebar]);
 
   // Fetch accounts on load and refresh occasionally
   const fetchAccounts = useCallback(async () => {

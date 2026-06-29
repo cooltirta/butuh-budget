@@ -2,6 +2,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
+type Category = {
+  id: string;
+  name: string;
+};
+
 type Account = {
   id: string;
   name: string;
@@ -12,6 +17,7 @@ type Account = {
 type CategoryGroup = {
   id: string;
   name: string;
+  categories: Category[];
 };
 
 export default function SettingsPage() {
@@ -19,6 +25,7 @@ export default function SettingsPage() {
   
   // States
   const [categoryGroups, setCategoryGroups] = useState<CategoryGroup[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Form states
@@ -56,12 +63,132 @@ export default function SettingsPage() {
           setCategoryForm((prev) => ({ ...prev, groupId: json.categoryGroups[0].id }));
         }
       }
+
+      // Fetch accounts
+      const accountsRes = await fetch("/api/accounts");
+      if (accountsRes.ok) {
+        const accountsData = await accountsRes.json();
+        setAccounts(accountsData.accounts || []);
+      }
     } catch (err) {
       console.error("Failed to load settings data", err);
     } finally {
       setLoading(false);
     }
   }, [router]);
+
+  const handleEditAccount = async (id: string, currentName: string) => {
+    const newName = prompt("Masukkan nama baru rekening:", currentName);
+    if (!newName || newName.trim() === "" || newName === currentName) return;
+
+    try {
+      const res = await fetch("/api/accounts", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, name: newName.trim() }),
+      });
+
+      if (res.ok) {
+        showMessage("Nama rekening berhasil diubah!");
+        window.dispatchEvent(new Event("refresh-data"));
+        await fetchData();
+      }
+    } catch (err) {
+      console.error("Failed to edit account", err);
+    }
+  };
+
+  const handleDeleteAccount = async (id: string, name: string) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus rekening "${name}"? Seluruh data transaksi di rekening ini akan ikut terhapus secara permanen!`)) return;
+
+    try {
+      const res = await fetch(`/api/accounts?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        showMessage("Rekening berhasil dihapus!");
+        window.dispatchEvent(new Event("refresh-data"));
+        await fetchData();
+      }
+    } catch (err) {
+      console.error("Failed to delete account", err);
+    }
+  };
+
+  const handleEditCategoryGroup = async (id: string, currentName: string) => {
+    const newName = prompt("Masukkan nama baru grup kategori:", currentName);
+    if (!newName || newName.trim() === "" || newName === currentName) return;
+
+    try {
+      const res = await fetch("/api/settings/category-group", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, name: newName.trim() }),
+      });
+
+      if (res.ok) {
+        showMessage("Nama grup kategori berhasil diubah!");
+        await fetchData();
+      }
+    } catch (err) {
+      console.error("Failed to edit category group", err);
+    }
+  };
+
+  const handleDeleteCategoryGroup = async (id: string, name: string) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus grup kategori "${name}"? Seluruh pos pengeluaran di bawah grup ini akan ikut terhapus!`)) return;
+
+    try {
+      const res = await fetch(`/api/settings/category-group?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        showMessage("Grup kategori berhasil dihapus!");
+        await fetchData();
+      }
+    } catch (err) {
+      console.error("Failed to delete category group", err);
+    }
+  };
+
+  const handleEditCategory = async (id: string, currentName: string) => {
+    const newName = prompt("Masukkan nama baru kategori:", currentName);
+    if (!newName || newName.trim() === "" || newName === currentName) return;
+
+    try {
+      const res = await fetch("/api/settings/category", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, name: newName.trim() }),
+      });
+
+      if (res.ok) {
+        showMessage("Nama kategori berhasil diubah!");
+        await fetchData();
+      }
+    } catch (err) {
+      console.error("Failed to edit category", err);
+    }
+  };
+
+  const handleDeleteCategory = async (id: string, name: string) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus kategori "${name}"?`)) return;
+
+    try {
+      const res = await fetch(`/api/settings/category?id=${id}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        showMessage("Kategori berhasil dihapus!");
+        await fetchData();
+      }
+    } catch (err) {
+      console.error("Failed to delete category", err);
+    }
+  };
 
   useEffect(() => {
     fetchData();
@@ -382,6 +509,133 @@ export default function SettingsPage() {
               {catLoading ? "Membuat Kategori..." : "Buat Kategori"}
             </button>
           </form>
+        </div>
+      </div>
+
+      {/* MANAGE BUDGET DATA SECTION */}
+      <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-6">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <span>⚙️</span> Kelola Rekening & Kategori
+          </h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            Ubah nama atau hapus rekening bank dan pos anggaran pengeluaran.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Manage Accounts List */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              Daftar Rekening
+            </h3>
+            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+              {accounts.map((acc) => (
+                <div
+                  key={acc.id}
+                  className="flex items-center justify-between p-3 bg-gray-50/50 dark:bg-white/[0.02] border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-100/50 dark:hover:bg-white/[0.04] transition-all"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-gray-800 dark:text-white">{acc.name}</p>
+                    <p className="text-xs text-gray-400">
+                      Tipe: {acc.type === "CHECKING" ? "Giro/Utama" : acc.type === "SAVINGS" ? "Tabungan" : acc.type === "CREDIT_CARD" ? "Kartu Kredit" : "Kas Tunai"}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleEditAccount(acc.id, acc.name)}
+                      className="p-1.5 text-gray-400 hover:text-brand-500 hover:bg-brand-500/10 rounded-lg transition-all"
+                      title="Edit Nama"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      onClick={() => handleDeleteAccount(acc.id, acc.name)}
+                      className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                      title="Hapus Rekening"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {accounts.length === 0 && (
+                <p className="text-xs text-gray-450 dark:text-gray-500 text-center py-4">Belum ada rekening.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Manage Category Groups & Categories tree */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              Daftar Grup & Kategori Pos Anggaran
+            </h3>
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+              {categoryGroups.map((g) => (
+                <div
+                  key={g.id}
+                  className="p-4 bg-gray-50/30 dark:bg-white/[0.01] border border-gray-100/80 dark:border-gray-800/80 rounded-xl space-y-3"
+                >
+                  {/* Group header */}
+                  <div className="flex items-center justify-between border-b border-gray-100/50 dark:border-gray-800/50 pb-2">
+                    <span className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                      📁 {g.name}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleEditCategoryGroup(g.id, g.name)}
+                        className="text-xs text-gray-400 hover:text-brand-500 transition-all px-1"
+                        title="Edit Nama Grup"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCategoryGroup(g.id, g.name)}
+                        className="text-xs text-gray-400 hover:text-red-500 transition-all px-1"
+                        title="Hapus Grup"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Categories inside this group */}
+                  <div className="pl-4 space-y-2">
+                    {g.categories && g.categories.map((c) => (
+                      <div
+                        key={c.id}
+                        className="flex items-center justify-between p-2 bg-white dark:bg-gray-950 border border-gray-100 dark:border-gray-800/55 rounded-lg text-xs hover:bg-gray-50 dark:hover:bg-white/[0.01] transition-all"
+                      >
+                        <span className="font-semibold text-gray-700 dark:text-gray-300">🏷️ {c.name}</span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleEditCategory(c.id, c.name)}
+                            className="text-gray-400 hover:text-brand-500 transition-all"
+                            title="Edit Kategori"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCategory(c.id, c.name)}
+                            className="text-gray-400 hover:text-red-500 transition-all"
+                            title="Hapus Kategori"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {(!g.categories || g.categories.length === 0) && (
+                      <p className="text-[10px] text-gray-450 dark:text-gray-500 italic">Belum ada kategori di grup ini.</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {categoryGroups.length === 0 && (
+                <p className="text-xs text-gray-450 dark:text-gray-500 text-center py-4">Belum ada grup kategori.</p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -265,8 +265,8 @@ function AccountsRegister() {
           </p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 px-6 py-3.5 rounded-2xl text-right">
+        <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full sm:w-auto">
+          <div className="bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 px-6 py-3.5 rounded-2xl text-center sm:text-right w-full sm:w-auto">
             <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
               Saldo Berjalan
             </p>
@@ -288,7 +288,7 @@ function AccountsRegister() {
           {activeAccount && (
             <button
               onClick={openReconcileModal}
-              className="px-6 py-4 border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300 rounded-2xl font-semibold transition-all text-sm flex items-center gap-2"
+              className="px-6 py-3 border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300 rounded-2xl font-semibold transition-all text-sm flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               ✔️ Rekonsiliasi
             </button>
@@ -296,15 +296,15 @@ function AccountsRegister() {
 
           <button
             onClick={() => setIsModalOpen(true)}
-            className="px-6 py-4 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl font-semibold transition-all shadow-lg shadow-brand-500/20 text-sm flex items-center gap-2"
+            className="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-2xl font-semibold transition-all shadow-lg shadow-brand-500/20 text-sm flex items-center justify-center gap-2 w-full sm:w-auto"
           >
             <span className="text-lg">+</span> Tambah Transaksi
           </button>
         </div>
       </div>
 
-      {/* Transaction Register Table */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-theme-xs">
+      {/* Transaction Register Table - Desktop View */}
+      <div className="hidden md:block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden shadow-theme-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
@@ -321,10 +321,7 @@ function AccountsRegister() {
             <tbody>
               {transactions.map((tx) => {
                 const isOutflow = tx.amount < 0;
-                // If it's a transfer, we show destination in Category or Payee
                 const isTransfer = tx.toAccountId !== null;
-
-                // For rendering account name:
                 const accountName = tx.account.name;
 
                 return (
@@ -332,7 +329,6 @@ function AccountsRegister() {
                     key={tx.id}
                     className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50/40 dark:hover:bg-white/[0.01]"
                   >
-                    {/* Date */}
                     <td className="py-3.5 px-6 text-sm text-gray-700 dark:text-gray-300">
                       {new Date(tx.date).toLocaleDateString("id-ID", {
                         month: "short",
@@ -340,18 +336,12 @@ function AccountsRegister() {
                         year: "numeric",
                       })}
                     </td>
-
-                    {/* Account */}
                     <td className="py-3.5 px-6 text-sm text-gray-600 dark:text-gray-400 font-medium truncate max-w-[130px]">
                       {accountName}
                     </td>
-
-                    {/* Payee */}
-                    <td className="py-3.5 px-6 text-sm font-semibold text-gray-800 dark:text-white/90 font-medium">
+                    <td className="py-3.5 px-6 text-sm font-semibold text-gray-800 dark:text-white/90">
                       {tx.payee}
                     </td>
-
-                    {/* Category */}
                     <td className="py-3.5 px-6 text-sm">
                       {isTransfer ? (
                         <span className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2 py-0.5 rounded-full font-bold border border-purple-500/15">
@@ -367,13 +357,9 @@ function AccountsRegister() {
                         </span>
                       )}
                     </td>
-
-                    {/* Memo */}
                     <td className="py-3.5 px-6 text-sm text-gray-500 dark:text-gray-400 truncate max-w-[200px]" title={tx.memo || ""}>
                       {tx.memo || "-"}
                     </td>
-
-                    {/* Amount */}
                     <td
                       className={`py-3.5 px-6 text-sm font-bold text-right ${
                         isOutflow ? "text-red-500" : "text-green-600 dark:text-green-400"
@@ -381,8 +367,6 @@ function AccountsRegister() {
                     >
                       {formatCurrency(Math.abs(tx.amount))}
                     </td>
-
-                    {/* Actions */}
                     <td className="py-3.5 px-6 text-center">
                       {tx.reconciled ? (
                         <span className="text-green-600 dark:text-green-400 font-bold text-sm" title="Sudah direkonsiliasi & dikunci">
@@ -410,6 +394,88 @@ function AccountsRegister() {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Transaction Register Cards - Mobile View */}
+      <div className="block md:hidden space-y-4">
+        {transactions.map((tx) => {
+          const isOutflow = tx.amount < 0;
+          const isTransfer = tx.toAccountId !== null;
+          const accountName = tx.account.name;
+
+          return (
+            <div
+              key={tx.id}
+              className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-theme-xs space-y-3"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">
+                    {new Date(tx.date).toLocaleDateString("id-ID", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </span>
+                  <h3 className="text-sm font-bold text-gray-800 dark:text-white mt-0.5">
+                    {tx.payee}
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                    {accountName}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span
+                    className={`text-sm font-bold block ${
+                      isOutflow ? "text-red-500" : "text-green-600 dark:text-green-400"
+                    }`}
+                  >
+                    {isOutflow ? "-" : ""}{formatCurrency(Math.abs(tx.amount))}
+                  </span>
+                  <span className="mt-1 block">
+                    {isTransfer ? (
+                      <span className="text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 px-2.5 py-0.5 rounded-full font-bold border border-purple-500/15">
+                        🔄 Transfer
+                      </span>
+                    ) : tx.category ? (
+                      <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-full font-semibold">
+                        {tx.category.name}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] bg-green-500/10 text-green-600 dark:text-green-400 px-2 py-0.5 rounded-full font-bold border border-green-500/15">
+                        💵 Siap Alokasi
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between border-t border-gray-50 dark:border-gray-850 pt-2.5">
+                <span className="text-xs text-gray-400 dark:text-gray-500 italic max-w-[200px] truncate">
+                  {tx.memo ? `📝 ${tx.memo}` : "-"}
+                </span>
+                
+                {tx.reconciled ? (
+                  <span className="text-green-600 dark:text-green-400 text-xs flex items-center gap-1 font-semibold">
+                    🔒 Terkunci
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => handleDeleteTransaction(tx.id)}
+                    className="text-red-500 hover:text-red-650 text-xs font-semibold hover:underline"
+                  >
+                    Hapus
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+        {transactions.length === 0 && !loading && (
+          <div className="bg-white dark:bg-gray-900 p-8 text-center text-gray-450 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-theme-xs text-sm">
+            Belum ada transaksi di rekening ini.
+          </div>
+        )}
       </div>
 
       {/* ADD TRANSACTION MODAL */}
