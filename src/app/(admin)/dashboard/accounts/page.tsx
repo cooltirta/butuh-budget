@@ -533,6 +533,16 @@ function AccountsRegister() {
                       required
                       value={formData.date}
                       onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      onClick={(e) => {
+                        try {
+                          e.currentTarget.showPicker();
+                        } catch (err) {}
+                      }}
+                      onFocus={(e) => {
+                        try {
+                          e.currentTarget.showPicker();
+                        } catch (err) {}
+                      }}
                       className="w-full px-3 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden"
                     />
                   </div>
