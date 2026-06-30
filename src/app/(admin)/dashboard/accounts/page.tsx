@@ -187,9 +187,13 @@ function AccountsRegister() {
         // Dispatch global event so sidebar updates account balances
         window.dispatchEvent(new Event("refresh-data"));
         await fetchData();
+      } else {
+        const errJson = await res.json();
+        alert(errJson.error || "Gagal menyimpan transaksi.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to add transaction", err);
+      alert(err.message || "Terjadi kesalahan saat menyimpan transaksi.");
     } finally {
       setTxLoading(false);
     }
