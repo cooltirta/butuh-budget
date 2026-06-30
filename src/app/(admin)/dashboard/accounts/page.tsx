@@ -484,24 +484,24 @@ function AccountsRegister() {
 
       {/* ADD TRANSACTION MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 w-full max-w-lg overflow-hidden shadow-theme-lg">
-            <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                ➕ Tambah Transaksi Baru
+        <div className="fixed inset-0 z-9999 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 overflow-y-auto">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 w-full max-w-lg overflow-hidden shadow-theme-lg my-8">
+            <div className="p-5 sm:p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <span>➕</span> Tambah Transaksi Baru
               </h2>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-gray-650 text-lg"
+                className="text-gray-400 hover:text-gray-650 text-xl font-medium p-1 transition-all"
               >
                 &times;
               </button>
             </div>
 
             <form onSubmit={handleAddTransactionSubmit}>
-              <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+              <div className="p-5 sm:p-6 space-y-4 max-h-[70vh] sm:max-h-[60vh] overflow-y-auto">
                 {/* Transaction Type tab */}
-                <div className="grid grid-cols-2 gap-2 bg-gray-50 dark:bg-white/[0.03] p-1.5 rounded-xl border border-gray-100 dark:border-gray-800">
+                <div className="grid grid-cols-2 gap-1.5 bg-gray-50 dark:bg-white/[0.03] p-1 rounded-xl border border-gray-100 dark:border-gray-800">
                   <button
                     type="button"
                     onClick={() => setTxType("standard")}
@@ -511,7 +511,8 @@ function AccountsRegister() {
                         : "text-gray-500 dark:text-gray-400 hover:text-gray-850"
                     }`}
                   >
-                    Pengeluaran / Pemasukan
+                    <span className="hidden sm:inline">Pengeluaran / Pemasukan</span>
+                    <span className="sm:hidden">Transaksi</span>
                   </button>
                   <button
                     type="button"
@@ -522,14 +523,15 @@ function AccountsRegister() {
                         : "text-gray-500 dark:text-gray-400 hover:text-gray-850"
                     }`}
                   >
-                    Transfer Antar Rekening
+                    <span className="hidden sm:inline">Transfer Antar Rekening</span>
+                    <span className="sm:hidden">Transfer</span>
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Date */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                    <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">
                       Tanggal
                     </label>
                     <input
@@ -547,20 +549,21 @@ function AccountsRegister() {
                           e.currentTarget.showPicker();
                         } catch (err) {}
                       }}
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden"
+                      className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden"
                     />
                   </div>
 
                   {/* Account (Source Account) */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                    <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">
                       {txType === "transfer" ? "Rekening Asal" : "Rekening"}
                     </label>
                     <select
                       required
                       value={formData.accountId}
                       onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
-                      className="w-full px-3 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden"
+                      className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden appearance-none"
+                      style={{ backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0.75rem center', backgroundSize: '1.25rem', backgroundRepeat: 'no-repeat', paddingRight: '2.5rem' }}
                     >
                       {accounts.map((acc) => (
                         <option key={acc.id} value={acc.id}>
@@ -571,14 +574,14 @@ function AccountsRegister() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Amount */}
                   <div>
-                    <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                    <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">
                       Jumlah (Rp)
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">Rp</span>
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-semibold">Rp</span>
                       <input
                         type="text"
                         required
@@ -588,7 +591,7 @@ function AccountsRegister() {
                           const digits = e.target.value.replace(/[^0-9]/g, "");
                           setFormData({ ...formData, amountStr: digits });
                         }}
-                        className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden"
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden"
                       />
                     </div>
                   </div>
@@ -596,45 +599,46 @@ function AccountsRegister() {
                   {/* Flow Toggle (Standard Type Only) */}
                   {txType === "standard" ? (
                     <div>
-                      <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                      <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">
                         Alur Keuangan
                       </label>
-                      <div className="grid grid-cols-2 gap-2 bg-gray-50 dark:bg-white/[0.03] p-1 rounded-xl border border-gray-100 dark:border-gray-800">
+                      <div className="grid grid-cols-2 gap-1.5 bg-gray-50 dark:bg-white/[0.03] p-1 rounded-xl border border-gray-100 dark:border-gray-800">
                         <button
                           type="button"
                           onClick={() => setFormData({ ...formData, isOutflow: true })}
-                          className={`py-1 text-xs font-semibold rounded-lg ${
+                          className={`py-2 text-xs font-semibold rounded-lg transition-all ${
                             formData.isOutflow
                               ? "bg-red-500 text-white shadow-theme-xs"
-                              : "text-gray-500 dark:text-gray-400"
+                              : "text-gray-500 dark:text-gray-400 hover:text-gray-850"
                           }`}
                         >
-                          Pengeluaran (-)
+                          Pengeluaran
                         </button>
                         <button
                           type="button"
                           onClick={() => setFormData({ ...formData, isOutflow: false })}
-                          className={`py-1 text-xs font-semibold rounded-lg ${
+                          className={`py-2 text-xs font-semibold rounded-lg transition-all ${
                             !formData.isOutflow
                               ? "bg-green-600 text-white shadow-theme-xs"
-                              : "text-gray-500 dark:text-gray-400"
+                              : "text-gray-500 dark:text-gray-400 hover:text-gray-850"
                           }`}
                         >
-                          Pemasukan (+)
+                          Pemasukan
                         </button>
                       </div>
                     </div>
                   ) : (
                     /* Destination Account (Transfer Type Only) */
                     <div>
-                      <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                      <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">
                         Rekening Tujuan
                       </label>
                       <select
                         required
                         value={formData.toAccountId}
                         onChange={(e) => setFormData({ ...formData, toAccountId: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden"
+                        className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden appearance-none"
+                        style={{ backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0.75rem center', backgroundSize: '1.25rem', backgroundRepeat: 'no-repeat', paddingRight: '2.5rem' }}
                       >
                         <option value="">-- Pilih Rekening --</option>
                         {accounts
@@ -653,7 +657,7 @@ function AccountsRegister() {
                 {txType === "standard" && (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                      <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">
                         Penerima / Sumber Dana
                       </label>
                       <input
@@ -662,21 +666,22 @@ function AccountsRegister() {
                         placeholder="misal: Supermarket, Gaji Bulanan, Tagihan Listrik..."
                         value={formData.payee}
                         onChange={(e) => setFormData({ ...formData, payee: e.target.value })}
-                        className="w-full px-3 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden"
+                        className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden"
                       />
                     </div>
 
                     {/* Category Selection (Only if standard & outflow) */}
                     {formData.isOutflow && (
                       <div>
-                        <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                        <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">
                           Kategori
                         </label>
                         <select
                           required
                           value={formData.categoryId}
                           onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                          className="w-full px-3 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden"
+                          className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden appearance-none"
+                          style={{ backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E")`, backgroundPosition: 'right 0.75rem center', backgroundSize: '1.25rem', backgroundRepeat: 'no-repeat', paddingRight: '2.5rem' }}
                         >
                           <option value="">-- Pilih Kategori --</option>
                           {categories.map((cat) => (
@@ -692,7 +697,7 @@ function AccountsRegister() {
 
                 {/* Memo */}
                 <div>
-                  <label className="block text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">
+                  <label className="block text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-1.5">
                     Catatan
                   </label>
                   <input
@@ -700,24 +705,24 @@ function AccountsRegister() {
                     placeholder="Catatan tambahan (opsional)..."
                     value={formData.memo}
                     onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
-                    className="w-full px-3 py-2 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden"
+                    className="w-full px-3.5 py-2.5 bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-gray-800 rounded-xl text-sm font-semibold focus:outline-hidden"
                   />
                 </div>
               </div>
 
               {/* Footer */}
-              <div className="p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-white/[0.01] flex justify-end gap-3">
+              <div className="p-5 sm:p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-white/[0.01] flex flex-col-reverse sm:flex-row justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl text-sm font-semibold transition-all text-gray-700 dark:text-gray-300"
+                  className="w-full sm:w-auto px-4 py-2.5 border border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl text-sm font-semibold transition-all text-gray-700 dark:text-gray-300"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={txLoading || (txType === "transfer" && !formData.toAccountId)}
-                  className="px-5 py-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-55 disabled:hover:bg-brand-500 rounded-xl text-sm font-semibold text-white transition-all shadow-lg shadow-brand-500/20"
+                  className="w-full sm:w-auto px-5 py-2.5 bg-brand-500 hover:bg-brand-600 disabled:opacity-55 disabled:hover:bg-brand-500 rounded-xl text-sm font-semibold text-white transition-all shadow-lg shadow-brand-500/20"
                 >
                   {txLoading ? "Menyimpan..." : "Simpan Transaksi"}
                 </button>
